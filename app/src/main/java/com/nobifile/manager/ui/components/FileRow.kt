@@ -115,7 +115,7 @@ fun EmptyState(title: String, subtitle: String, modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            androidx.compose.material.icons.Icons.Rounded.FolderOpen,
+            androidx.compose.material.icons.Icons.Rounded.Folder,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size(48.dp)

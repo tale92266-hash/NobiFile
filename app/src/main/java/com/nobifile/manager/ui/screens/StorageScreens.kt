@@ -122,7 +122,7 @@ fun StorageScreen(navController: NavController) {
             }
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Rounded.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
                     Text("Empty folders", style = MaterialTheme.typography.titleMedium)
                 }
