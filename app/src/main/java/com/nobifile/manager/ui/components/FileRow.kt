@@ -1,6 +1,7 @@
 package com.nobifile.manager.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -10,15 +11,26 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.nobifile.manager.data.FileItem
 import com.nobifile.manager.data.ViewMode
+import com.nobifile.manager.data.categoryFor
 import com.nobifile.manager.data.formatSize
 import com.nobifile.manager.icons.FileIconResolver
+import com.nobifile.manager.storage.ThumbnailCache
+import android.graphics.Bitmap
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,11 +50,23 @@ fun FileRow(
     showExtension: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showThumbnail: Boolean = true
 ) {
     val style = FileIconResolver.styleFor(item)
     val badge = FileIconResolver.folderBadge(item)
     val title = if (showExtension || item.isDirectory) item.name else item.name.substringBeforeLast('.', item.name)
+    // Real thumbnails for images and videos (own cache, no extra library).
+    // The cache existed since V1 but no row ever called it, so every file
+    // showed only its format icon; video frames additionally needed a
+    // MediaMetadataRetriever path because BitmapFactory cannot decode video.
+    val context = LocalContext.current
+    val isThumbCandidate = showThumbnail && !item.isDirectory &&
+        (categoryFor(item) == "image" || categoryFor(item) == "video")
+    var thumb by remember(item.key) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(item.key, isThumbCandidate) {
+        thumb = if (isThumbCandidate) ThumbnailCache.load(context, item.key, item.file, null) else null
+    }
     if (viewMode == ViewMode.GRID || viewMode == ViewMode.LARGE_GRID) {
         Column(
             modifier = modifier
@@ -53,7 +77,16 @@ fun FileRow(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box {
-                Icon(style.icon, contentDescription = item.name, tint = style.color, modifier = Modifier.size(if (viewMode == ViewMode.LARGE_GRID) 44.dp else 34.dp))
+                if (thumb != null) {
+                    Image(
+                        bitmap = thumb!!.asImageBitmap(),
+                        contentDescription = item.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.size(if (viewMode == ViewMode.LARGE_GRID) 44.dp else 34.dp).clip(RoundedCornerShape(8.dp))
+                    )
+                } else {
+                    Icon(style.icon, contentDescription = item.name, tint = style.color, modifier = Modifier.size(if (viewMode == ViewMode.LARGE_GRID) 44.dp else 34.dp))
+                }
                 if (selected) Icon(Icons.Rounded.CheckCircle, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp).align(Alignment.TopEnd))
             }
             Spacer(Modifier.height(6.dp))
@@ -82,7 +115,16 @@ fun FileRow(
                 .background(style.color.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
-            Icon(style.icon, contentDescription = item.name, tint = style.color, modifier = Modifier.size(24.dp))
+            if (thumb != null) {
+                Image(
+                    bitmap = thumb!!.asImageBitmap(),
+                    contentDescription = item.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Icon(style.icon, contentDescription = item.name, tint = style.color, modifier = Modifier.size(24.dp))
+            }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {

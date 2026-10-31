@@ -114,8 +114,19 @@ fun ExplorerScreen(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as NobiFileApplication
-    var tabs by remember { mutableStateOf(listOf(initialPath)) }
-    var currentTab by remember { mutableStateOf(0) }
+    // Tabs persist in the database: restoring them (plus the requested
+    // folder as its own tab) keeps deep-folder state across viewer trips.
+    val savedTabs = runCatching { app.database.tabs().sortedBy { it.index }.map { it.path } }.getOrDefault(emptyList())
+    var tabs by remember {
+        mutableStateOf(
+            when {
+                savedTabs.isEmpty() -> listOf(initialPath)
+                savedTabs.contains(initialPath) -> savedTabs
+                else -> savedTabs + initialPath
+            }
+        )
+    }
+    var currentTab by remember { mutableStateOf(tabs.indexOf(initialPath).coerceAtLeast(0)) }
     var dualPane by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
@@ -153,7 +164,12 @@ fun ExplorerScreen(
                         paneKey = "pane-a",
                         modifier = Modifier.weight(1f),
                         dualPane = true,
-                        onToggleDualPane = { dualPane = false }
+                        onToggleDualPane = { dualPane = false },
+                        onPathChange = { path ->
+                            if (tabs.getOrElse(currentTab) { "" } != path) {
+                                tabs = tabs.toMutableList().also { it[currentTab] = path }
+                            }
+                        }
                     )
                     Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
                     ExplorerPane(
@@ -187,7 +203,12 @@ fun ExplorerScreen(
                         }
                     },
                     dualPane = dualPane,
-                    onToggleDualPane = { dualPane = !dualPane }
+                    onToggleDualPane = { dualPane = !dualPane },
+                    onPathChange = { path ->
+                        if (tabs.getOrElse(currentTab) { "" } != path) {
+                            tabs = tabs.toMutableList().also { it[currentTab] = path }
+                        }
+                    }
                 )
             }
         }
@@ -206,7 +227,8 @@ fun ExplorerPane(
     onNewTab: ((String) -> Unit)? = null,
     onCloseTab: (() -> Unit)? = null,
     dualPane: Boolean = false,
-    onToggleDualPane: (() -> Unit)? = null
+    onToggleDualPane: (() -> Unit)? = null,
+    onPathChange: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as NobiFileApplication
@@ -225,6 +247,7 @@ fun ExplorerPane(
     val selection by vm.selection.collectAsState()
     val selectionMode = selection.isNotEmpty()
     val showExtensions by app.prefs.showExtensions.collectAsState(initial = true)
+    val thumbnailsEnabled by app.prefs.thumbnails.collectAsState(initial = true)
     val clipboard by app.operations.clipboard.collectAsState()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -243,7 +266,10 @@ fun ExplorerPane(
     var batchItems by remember { mutableStateOf<List<FileItem>?>(null) }
     var conflictPending by remember { mutableStateOf<Triple<List<FileItem>, File, Boolean>?>(null) }
 
-    LaunchedEffect(initialPath, kind) { vm.loadPath(initialPath, pushHistory = false) }
+    LaunchedEffect(initialPath, kind) { vm.loadInitial(initialPath) }
+    // Report the live folder upward so the tab list (persisted to the
+    // database) tracks deep navigation, not just the entry folder.
+    LaunchedEffect(currentPath) { onPathChange?.invoke(currentPath) }
 
     fun handleBack(): Boolean {
         if (selectionMode) { vm.clearSelection(); return true }
@@ -428,7 +454,7 @@ fun ExplorerPane(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(items, key = { it.key }) { item ->
-                            FileRow(item, viewMode, selection.contains(item.key), selectionMode, showExtensions, onClick = { handleOpen(item) }, onLongClick = { vm.selectOnly(item) })
+                            FileRow(item, viewMode, selection.contains(item.key), selectionMode, showExtensions, onClick = { handleOpen(item) }, onLongClick = { vm.selectOnly(item) }, showThumbnail = thumbnailsEnabled)
                         }
                     }
                 } else {
@@ -440,7 +466,7 @@ fun ExplorerPane(
                                 },
                                 onLongClick = {
                                     if (selectionMode) vm.toggleSelect(item) else { vm.selectOnly(item); sheetItem = item }
-                                })
+                                }, showThumbnail = thumbnailsEnabled)
                         }
                     }
                 }

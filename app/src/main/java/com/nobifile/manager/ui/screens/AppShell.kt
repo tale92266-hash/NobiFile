@@ -48,14 +48,28 @@ fun AppShell() {
     val navController = rememberNavController()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val drawerScope = rememberCoroutineScope()
+    // Double-tap guard: two drawer taps in quick succession raced two
+    // navigations (popUpTo + restoreState) and left a blank NavHost.
+    // Taps within 600ms are ignored, and navigating to the destination
+    // already shown (same route + same Explorer path) only closes the drawer.
+    var lastNavAt by remember { mutableLongStateOf(0L) }
 
     fun closeDrawerAndGo(route: String) {
+        val now = System.currentTimeMillis()
+        if (now - lastNavAt < 600) return
+        lastNavAt = now
         drawerScope.launch {
             try { drawerState.close() } catch (e: Exception) { }
             // Navigate only after the drawer has closed: navigating while the
             // drawer animates was a crash source in V1 (sidebar click crash).
-            val current = navController.currentDestination?.route ?: ""
-            if (current == route) return@launch
+            val current = navController.currentBackStackEntry
+            val currentBase = current?.destination?.route?.substringBefore("?")
+            val targetBase = route.substringBefore("?")
+            if (currentBase == targetBase) {
+                val curPath = current?.arguments?.getString("path")
+                val tgtPath = try { Uri.parse(route).getQueryParameter("path") } catch (e: Exception) { null }
+                if (curPath == tgtPath) return@launch
+            }
             try {
                 navController.navigate(route) {
                     popUpTo(Dest.Home.route) { saveState = true }

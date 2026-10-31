@@ -35,6 +35,9 @@ fun ViewerScreen(navController: NavController, path: String, kind: String) {
     val context = LocalContext.current
     val file = File(path)
     val scope = rememberCoroutineScope()
+    // System Back closes only this viewer (one step back to the folder),
+    // never the whole file manager.
+    androidx.activity.compose.BackHandler { navController.popBackStack() }
     Scaffold(
         topBar = {
             TopAppBar(

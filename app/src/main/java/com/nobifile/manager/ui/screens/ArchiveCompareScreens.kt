@@ -1,5 +1,6 @@
 package com.nobifile.manager.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import java.io.File
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArchiveScreen(navController: NavController, path: String) {
+    BackHandler { navController.popBackStack() }
     val context = LocalContext.current
     val file = File(path)
     val scope = rememberCoroutineScope()
@@ -115,6 +117,7 @@ fun ArchiveScreen(navController: NavController, path: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompareScreen(navController: NavController, leftPath: String, rightPath: String) {
+    BackHandler { navController.popBackStack() }
     val left = File(leftPath)
     val right = File(rightPath)
     var lines by remember { mutableStateOf<List<com.nobifile.manager.ops.TextCompare.DiffLine>>(emptyList()) }

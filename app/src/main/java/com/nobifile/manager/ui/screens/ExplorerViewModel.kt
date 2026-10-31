@@ -48,6 +48,18 @@ class ExplorerViewModel(
     val backStack: StateFlow<List<String>> = _backStack.asStateFlow()
 
     private var loadJob: Job? = null
+    private var hasLoadedInitial = false
+
+    /** Loads the entry folder exactly once per ViewModel instance. The pane's
+     * LaunchedEffect re-runs whenever the pane re-enters composition (e.g.
+     * returning from a file viewer), and reloading the entry folder there
+     * threw away deep-folder state — Back from a file went "all the way back".
+     * After the first load, returning only refreshes the current folder. */
+    fun loadInitial(path: String) {
+        if (hasLoadedInitial) return
+        hasLoadedInitial = true
+        loadPath(path, pushHistory = false)
+    }
 
     fun setSort(s: SortOrder) { _sort.value = s; load() }
     fun setViewMode(v: ViewMode) { _viewMode.value = v }

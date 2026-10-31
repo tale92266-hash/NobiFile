@@ -5,7 +5,7 @@
 Professional developer file manager for Android. Native Kotlin + Jetpack Compose + Material 3.
 
 - Package: `com.nobifile.manager`
-- Version: 1.0.2 (versionCode 3) • Build label: V3
+- Version: 1.0.3 (versionCode 4) • Build label: V4
 - Launcher icon: Sam's supplied folder artwork (transparent foreground, `#0B1220` background from code, 56% adaptive canvas).
 - Stack: Gradle 8.11.1, AGP 8.9.2, Kotlin 2.2.21, compileSdk 35, minSdk 30, targetSdk 35
 - App UI text is English throughout.
