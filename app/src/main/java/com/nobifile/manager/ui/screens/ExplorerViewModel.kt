@@ -116,10 +116,20 @@ class ExplorerViewModel(
     }
 
     fun navigateUp(): Boolean {
+        // Internal Storage (/storage/emulated/0) is the top of the file
+        // hierarchy for browsing. Going above it (to /storage/emulated, /storage
+        // or /) confused users and made Back look like it closed the app, so
+        // back at the root returns false and the caller goes Home instead.
+        val current = _currentPath.value.trimEnd('/')
+        if (kind != "saf" && (current == "/storage/emulated/0" || current.isEmpty())) return false
         val stack = _backStack.value
         if (stack.isEmpty()) {
             val parent = File(_currentPath.value).parentFile
-            if (parent != null && parent.exists()) { loadPath(parent.absolutePath, pushHistory = false); return true }
+            if (parent != null && parent.exists()) {
+                val parentPath = parent.absolutePath.trimEnd('/')
+                if (kind != "saf" && !parentPath.startsWith("/storage/emulated/0")) return false
+                loadPath(parent.absolutePath, pushHistory = false); return true
+            }
             return false
         }
         val prev = stack.last()

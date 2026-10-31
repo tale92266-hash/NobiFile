@@ -26,7 +26,7 @@ fun OperationsScreen(navController: NavController) {
     val context = LocalContext.current
     val app = context.applicationContext as NobiFileApplication
     val ops by app.operations.operations.collectAsState()
-    var history by remember { mutableStateOf(app.database.operationHistory()) }
+    var history by remember { mutableStateOf(runCatching { app.database.operationHistory() }.getOrDefault(emptyList())) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -67,7 +67,8 @@ fun OperationsScreen(navController: NavController) {
                 items(history) { h ->
                     ListItem(
                         headlineContent = { Text("${h.kind}: ${h.detail}") },
-                        supportingContent = { Text("${h.result} • ${formatDate(h.time)}") }
+                        supportingContent = { Text("${h.result} • ${formatDate(h.time)}") },
+                        leadingContent = { Icon(Icons.Rounded.History, contentDescription = null) }
                     )
                     Divider()
                 }
@@ -81,7 +82,7 @@ fun OperationsScreen(navController: NavController) {
 fun TrashScreen(navController: NavController) {
     val context = LocalContext.current
     val app = context.applicationContext as NobiFileApplication
-    var entries by remember { mutableStateOf(app.database.trashEntries()) }
+    var entries by remember { mutableStateOf(runCatching { app.database.trashEntries() }.getOrDefault(emptyList())) }
     val scope = rememberCoroutineScope()
     var message by remember { mutableStateOf<String?>(null) }
 
@@ -108,6 +109,7 @@ fun TrashScreen(navController: NavController) {
                         ListItem(
                             headlineContent = { Text(e.name) },
                             supportingContent = { Text("From: ${e.originalPath}\nDeleted: ${formatDate(e.deletedAt)}") },
+                            leadingContent = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                             trailingContent = {
                                 Row {
                                     TextButton(onClick = {

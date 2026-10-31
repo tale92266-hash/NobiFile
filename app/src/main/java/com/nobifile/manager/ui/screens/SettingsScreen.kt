@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -48,7 +49,11 @@ fun SettingsScreen(navController: NavController) {
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             item {
-                Text("Appearance", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Appearance", style = MaterialTheme.typography.titleMedium)
+                }
                 Text("Theme: $theme", style = MaterialTheme.typography.bodyMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("system", "light", "dark", "amoled").forEach { t ->
@@ -65,36 +70,68 @@ fun SettingsScreen(navController: NavController) {
                 Text("Dynamic colour is used on Android 12+ when available. AMOLED black uses a pure black background.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
-                Text("File explorer", style = MaterialTheme.typography.titleMedium)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Show hidden files")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("File explorer", style = MaterialTheme.typography.titleMedium)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.VisibilityOff, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Show hidden files")
+                    }
                     Switch(checked = showHidden, onCheckedChange = { scope.launch { app.prefs.setBool(PrefsStore.SHOW_HIDDEN, it) } })
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Folders first")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Folder, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Folders first")
+                    }
                     Switch(checked = foldersFirst, onCheckedChange = { scope.launch { app.prefs.setBool(PrefsStore.FOLDERS_FIRST, it) } })
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Show file extensions")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Extension, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Show file extensions")
+                    }
                     Switch(checked = showExtensions, onCheckedChange = { scope.launch { app.prefs.setBool(PrefsStore.SHOW_EXTENSIONS, it) } })
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Thumbnails")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Image, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Thumbnails")
+                    }
                     Switch(checked = thumbnails, onCheckedChange = { scope.launch { app.prefs.setBool(PrefsStore.THUMBNAILS, it) } })
                 }
                 Text("Grid columns: $gridColumns", style = MaterialTheme.typography.bodyMedium)
                 Slider(value = gridColumns.toFloat(), onValueChange = { scope.launch { app.prefs.setInt(PrefsStore.GRID_COLUMNS, it.toInt()) } }, valueRange = 2f..5f, steps = 2)
             }
             item {
-                Text("File operations", style = MaterialTheme.typography.titleMedium)
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Confirm before deleting")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("File operations", style = MaterialTheme.typography.titleMedium)
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Delete, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Confirm before deleting")
+                    }
                     Switch(checked = confirmDelete, onCheckedChange = { scope.launch { app.prefs.setBool(PrefsStore.CONFIRM_DELETE, it) } })
                 }
                 Text("Conflicts always ask before overwriting. Cross-provider moves are verified before the original is deleted.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
-                Text("Storage", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Storage", style = MaterialTheme.typography.titleMedium)
+                }
                 Text("All-files access: ${if (Environment.isExternalStorageManager()) "Granted" else "Not granted"}", style = MaterialTheme.typography.bodyMedium)
                 Text("Persisted SAF locations: ${StorageRepository.persistedTrees(context).size}", style = MaterialTheme.typography.bodyMedium)
                 Spacer(Modifier.height(8.dp))
@@ -110,17 +147,25 @@ fun SettingsScreen(navController: NavController) {
                 Text("If access is denied, NobiFile only shows permitted locations and explains why other actions are unavailable. It never bypasses Android restrictions.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
-                Text("Privacy", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Privacy", style = MaterialTheme.typography.titleMedium)
+                }
                 Button(onClick = {
                     scope.launch(Dispatchers.IO) {
-                        app.database.clearRecents()
-                        app.database.clearSearchHistory()
+                        try { app.database.clearRecents() } catch (e: Exception) { }
+                        try { app.database.clearSearchHistory() } catch (e: Exception) { }
                     }
-                }) { Text("Clear recent files and search history") }
+                }) { Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Clear recent files and search history") }
                 Text("Bookmarks, collections, project roots and operation history are stored only on this device in the app database. No file contents are stored in the database.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             item {
-                Text("About NobiFile", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("About NobiFile", style = MaterialTheme.typography.titleMedium)
+                }
                 Text("Version: ${BuildInfo.VERSION_NAME} (${BuildInfo.VERSION_CODE}) • Build: ${BuildInfo.LABEL}", style = MaterialTheme.typography.bodyMedium)
                 Text("Package: com.nobifile.manager", style = MaterialTheme.typography.bodyMedium)
                 Text("NobiFile is the file manager of the Nobi ecosystem, alongside Nobi Code (editor) and Nobi Terminal (shell). Each app works on its own and shares only folders Android permits it to share.", style = MaterialTheme.typography.bodyMedium)

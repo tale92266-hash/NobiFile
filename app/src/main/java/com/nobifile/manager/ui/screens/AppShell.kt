@@ -11,8 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,6 +26,8 @@ import com.nobifile.manager.NobiFileApplication
 import com.nobifile.manager.data.PrefsStore
 import com.nobifile.manager.storage.StorageRepository
 import com.nobifile.manager.ui.navigation.Dest
+import com.nobifile.manager.ui.navigation.folderDisplayName
+import com.nobifile.manager.ui.navigation.navigateSafe
 import kotlinx.coroutines.launch
 
 @Composable
@@ -43,11 +47,21 @@ fun AppShell() {
     val drawerScope = rememberCoroutineScope()
 
     fun closeDrawerAndGo(route: String) {
-        drawerScope.launch { drawerState.close() }
-        navController.navigate(route) {
-            popUpTo(Dest.Home.route) { saveState = true }
-            launchSingleTop = true
-            restoreState = true
+        drawerScope.launch {
+            try { drawerState.close() } catch (e: Exception) { }
+            // Navigate only after the drawer has closed: navigating while the
+            // drawer animates was a crash source in V1 (sidebar click crash).
+            val current = navController.currentDestination?.route ?: ""
+            if (current == route) return@launch
+            try {
+                navController.navigate(route) {
+                    popUpTo(Dest.Home.route) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            } catch (e: Exception) {
+                navController.navigateSafe(route)
+            }
         }
     }
 
@@ -56,8 +70,14 @@ fun AppShell() {
         drawerContent = {
             ModalDrawerSheet {
                 Spacer(Modifier.height(12.dp))
-                Text("NobiFile", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 16.dp))
-                Text("Version ${BuildInfo.VERSION_NAME} • ${BuildInfo.LABEL}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp))
+                Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text("NobiFile", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Version ${BuildInfo.VERSION_NAME} • ${BuildInfo.LABEL}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
                 Spacer(Modifier.height(12.dp))
                 Divider()
                 NavigationDrawerItem(
@@ -97,7 +117,7 @@ fun AppShell() {
                     icon = { Icon(Icons.Rounded.Storage, contentDescription = null) }
                 )
                 Divider()
-                Text("Developer", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                Text("Developer", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                 NavigationDrawerItem(
                     label = { Text("Developer workspace") },
                     selected = false,
@@ -129,19 +149,26 @@ fun AppShell() {
                     onClick = { closeDrawerAndGo(Dest.Settings.route) },
                     icon = { Icon(Icons.Rounded.Settings, contentDescription = null) }
                 )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "NobiFile • Nobi Code • Nobi Terminal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
         }
     ) {
         NavHost(navController = navController, startDestination = Dest.Home.route) {
             composable(Dest.Home.route) {
-                HomeScreen(navController, onOpenDrawer = { drawerScope.launch { drawerState.open() } })
+                HomeScreen(navController, onOpenDrawer = { drawerScope.launch { try { drawerState.open() } catch (e: Exception) { } } })
             }
             composable(
                 route = Dest.Explorer.route,
                 arguments = listOf(
-                    navArgument("path") { type = NavType.StringType; defaultValue = StorageRepository.internalRoot().absolutePath },
-                    navArgument("kind") { type = NavType.StringType; defaultValue = "file" },
-                    navArgument("uri") { type = NavType.StringType; defaultValue = "" }
+                    navArgument("path") { type = NavType.StringType; nullable = true; defaultValue = StorageRepository.internalRoot().absolutePath },
+                    navArgument("kind") { type = NavType.StringType; nullable = true; defaultValue = "file" },
+                    navArgument("uri") { type = NavType.StringType; nullable = true; defaultValue = "" }
                 )
             ) { entry ->
                 val path = entry.arguments?.getString("path") ?: StorageRepository.internalRoot().absolutePath
@@ -160,23 +187,23 @@ fun AppShell() {
             composable(
                 route = Dest.Viewer.route,
                 arguments = listOf(
-                    navArgument("path") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("kind") { type = NavType.StringType; defaultValue = "" }
+                    navArgument("path") { type = NavType.StringType; nullable = true; defaultValue = "" },
+                    navArgument("kind") { type = NavType.StringType; nullable = true; defaultValue = "" }
                 )
             ) { entry ->
                 ViewerScreen(navController, entry.arguments?.getString("path") ?: "", entry.arguments?.getString("kind") ?: "")
             }
             composable(
                 route = Dest.Archive.route,
-                arguments = listOf(navArgument("path") { type = NavType.StringType; defaultValue = "" })
+                arguments = listOf(navArgument("path") { type = NavType.StringType; nullable = true; defaultValue = "" })
             ) { entry ->
                 ArchiveScreen(navController, entry.arguments?.getString("path") ?: "")
             }
             composable(
                 route = Dest.Compare.route,
                 arguments = listOf(
-                    navArgument("left") { type = NavType.StringType; defaultValue = "" },
-                    navArgument("right") { type = NavType.StringType; defaultValue = "" }
+                    navArgument("left") { type = NavType.StringType; nullable = true; defaultValue = "" },
+                    navArgument("right") { type = NavType.StringType; nullable = true; defaultValue = "" }
                 )
             ) { entry ->
                 CompareScreen(navController, entry.arguments?.getString("left") ?: "", entry.arguments?.getString("right") ?: "")
@@ -199,47 +226,113 @@ fun OnboardingScreen(onDone: () -> Unit) {
             }
         }
     }
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.Center) {
-        Text("Welcome to NobiFile", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(12.dp))
-        when (step) {
-            0 -> {
-                Text("A professional file manager for everyday use and development work. Browse, copy, move, rename, search, preview and manage archives — all on your device.")
-                Spacer(Modifier.height(12.dp))
-                Text("NobiFile works alongside Nobi Code and Nobi Terminal. Each app stays independent; they share only folders Android permits.")
-            }
-            1 -> {
-                Text("Storage access", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Text("Android limits which folders an app can see. For full browsing, grant All-files access in system settings. You can also pick individual folders with the Storage Access Framework. If access is denied, NobiFile shows only permitted locations and explains why — it never bypasses Android restrictions and never requests root access.")
-            }
-            else -> {
-                Text("Setup complete", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Text("You can change storage, theme and explorer settings later in Settings. Version ${BuildInfo.VERSION_NAME} • Build ${BuildInfo.LABEL}.")
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-        if (step == 1) {
-            Button(onClick = {
-                try {
-                    context.startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    })
-                } catch (e: Exception) {
-                    context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+    // Explicit Surface + explicit text colours: the screen must be readable in
+    // light, dark and AMOLED modes without relying on the window background.
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+        contentColor = MaterialTheme.colorScheme.onBackground
+    ) {
+        Column(
+            Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
+            Icon(
+                Icons.Rounded.Folder,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(56.dp)
+            )
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "Welcome to NobiFile",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Step ${step + 1} of 3",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(16.dp))
+            when (step) {
+                0 -> {
+                    Icon(Icons.Rounded.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "A professional file manager for everyday use and development work. Browse, copy, move, rename, search, preview and manage archives — all on your device.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "NobiFile works alongside Nobi Code and Nobi Terminal. Each app stays independent; they share only folders Android permits.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            }, modifier = Modifier.fillMaxWidth()) { Text("Grant all-files access") }
-            Spacer(Modifier.height(8.dp))
-            OutlinedButton(onClick = { treeLauncher.launch(null) }, modifier = Modifier.fillMaxWidth()) { Text("Pick a folder (SAF)") }
-            Spacer(Modifier.height(8.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (step > 0) OutlinedButton(onClick = { step-- }) { Text("Back") }
-            Button(onClick = { if (step < 2) step++ else onDone() }, modifier = Modifier.weight(1f)) {
-                Text(if (step < 2) "Continue" else "Enter NobiFile")
+                1 -> {
+                    Icon(Icons.Rounded.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Storage access",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Android limits which folders an app can see. For full browsing, grant All-files access in system settings. You can also pick individual folders with the Storage Access Framework. If access is denied, NobiFile shows only permitted locations and explains why — it never bypasses Android restrictions and never requests root access.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
+                else -> {
+                    Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Setup complete",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "You can change storage, theme and explorer settings later in Settings. Version ${BuildInfo.VERSION_NAME} • Build ${BuildInfo.LABEL}.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                }
             }
-            if (step < 2) TextButton(onClick = onDone) { Text("Skip") }
+            Spacer(Modifier.weight(1f))
+            if (step == 1) {
+                Button(onClick = {
+                    try {
+                        context.startActivity(Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                        })
+                    } catch (e: Exception) {
+                        context.startActivity(Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION))
+                    }
+                }, modifier = Modifier.fillMaxWidth()) { Text("Grant all-files access") }
+                Spacer(Modifier.height(8.dp))
+                OutlinedButton(onClick = { treeLauncher.launch(null) }, modifier = Modifier.fillMaxWidth()) { Text("Pick a folder (SAF)") }
+                Spacer(Modifier.height(8.dp))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (step > 0) OutlinedButton(onClick = { step-- }) { Text("Back") }
+                Button(onClick = { if (step < 2) step++ else onDone() }, modifier = Modifier.weight(1f)) {
+                    Text(if (step < 2) "Continue" else "Enter NobiFile")
+                }
+                if (step < 2) TextButton(onClick = onDone) { Text("Skip") }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "NobiFile • Version ${BuildInfo.VERSION_NAME}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

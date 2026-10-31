@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ import com.nobifile.manager.storage.StorageRepository
 import com.nobifile.manager.ui.components.EmptyState
 import com.nobifile.manager.ui.components.FileRow
 import com.nobifile.manager.ui.navigation.Dest
+import com.nobifile.manager.ui.navigation.navigateSafe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -66,7 +68,11 @@ fun StorageScreen(navController: NavController) {
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Internal Storage", style = MaterialTheme.typography.titleMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Storage, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            Spacer(Modifier.width(8.dp))
+                            Text("Internal Storage", style = MaterialTheme.typography.titleMedium)
+                        }
                         Spacer(Modifier.height(8.dp))
                         LinearProgressIndicator(progress = if (summary.totalBytes > 0) summary.usedBytes.toFloat() / summary.totalBytes.toFloat() else 0f, modifier = Modifier.fillMaxWidth())
                         Spacer(Modifier.height(8.dp))
@@ -78,7 +84,11 @@ fun StorageScreen(navController: NavController) {
             item {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("Directory size", style = MaterialTheme.typography.titleMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Directory size", style = MaterialTheme.typography.titleMedium)
+                }
                         Text(if (dirSize != null) "Internal Storage contents: ${formatSize(dirSize!!)} (file sizes only, calculated on request)" else "Not calculated yet. This scans files and can take a while on large storage.")
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -95,20 +105,32 @@ fun StorageScreen(navController: NavController) {
                     }
                 }
             }
-            item { Text("Large files (50 MB or larger)", style = MaterialTheme.typography.titleMedium) }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Large files (50 MB or larger)", style = MaterialTheme.typography.titleMedium)
+                }
+            }
             if (analyzing) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             if (large.isEmpty() && !analyzing) item { EmptyState("No large files found", "No files of 50 MB or larger were found in the scanned locations.") }
             items(large, key = { it.key }) { item ->
                 FileRow(item, ViewMode.LIST, false, false, true, onClick = {
                     val parent = item.file?.parentFile
-                    if (parent != null) navController.navigate(Dest.Explorer.create(parent.absolutePath))
+                    if (parent != null) navController.navigateSafe(Dest.Explorer.create(parent.absolutePath))
                 }, onLongClick = {})
             }
-            item { Text("Empty folders", style = MaterialTheme.typography.titleMedium) }
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.FolderOpen, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Empty folders", style = MaterialTheme.typography.titleMedium)
+                }
+            }
             if (emptyFolders.isEmpty() && !analyzing) item { EmptyState("No empty folders found", "No empty folders were found in the scanned locations.") }
             items(emptyFolders, key = { it.key }) { item ->
                 FileRow(item, ViewMode.LIST, false, false, true, onClick = {
-                    navController.navigate(Dest.Explorer.create(item.displayPath))
+                    navController.navigateSafe(Dest.Explorer.create(item.displayPath))
                 }, onLongClick = {})
             }
             item {
@@ -151,7 +173,18 @@ fun CategoriesScreen(navController: NavController) {
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 listOf("image" to "Images", "video" to "Videos", "audio" to "Audio", "document" to "Documents").forEach { (k, label) ->
-                    FilterChip(selected = kind == k, onClick = { load(k) }, label = { Text(label) })
+                    val chipIcon = when (k) {
+                        "image" -> Icons.Rounded.Image
+                        "video" -> Icons.Rounded.Movie
+                        "audio" -> Icons.Rounded.MusicNote
+                        else -> Icons.Rounded.Description
+                    }
+                    FilterChip(
+                        selected = kind == k,
+                        onClick = { load(k) },
+                        label = { Text(label) },
+                        leadingIcon = { Icon(chipIcon, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -161,7 +194,7 @@ fun CategoriesScreen(navController: NavController) {
                 items(items, key = { it.key }) { item ->
                     FileRow(item, ViewMode.LIST, false, false, true, onClick = {
                         val parent = item.file?.parentFile
-                        if (parent != null) navController.navigate(Dest.Explorer.create(parent.absolutePath))
+                        if (parent != null) navController.navigateSafe(Dest.Explorer.create(parent.absolutePath))
                     }, onLongClick = {})
                 }
             }

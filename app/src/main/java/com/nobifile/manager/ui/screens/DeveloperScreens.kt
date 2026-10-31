@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ import com.nobifile.manager.storage.StorageRepository
 import com.nobifile.manager.ui.components.EmptyState
 import com.nobifile.manager.ui.components.FileRow
 import com.nobifile.manager.ui.navigation.Dest
+import com.nobifile.manager.ui.navigation.navigateSafe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,7 +31,7 @@ import java.io.File
 fun DeveloperScreen(navController: NavController) {
     val context = LocalContext.current
     val app = context.applicationContext as NobiFileApplication
-    var roots by remember { mutableStateOf(app.database.projectRoots()) }
+    var roots by remember { mutableStateOf(runCatching { app.database.projectRoots() }.getOrDefault(emptyList())) }
     var newRootName by remember { mutableStateOf("") }
     var newRootPath by remember { mutableStateOf("") }
     var codeFiles by remember { mutableStateOf<List<FileItem>>(emptyList()) }
@@ -96,6 +98,7 @@ fun DeveloperScreen(navController: NavController) {
                     ListItem(
                         headlineContent = { Text(root.name) },
                         supportingContent = { Text(root.path) },
+                        leadingContent = { Icon(Icons.Rounded.Folder, contentDescription = null) },
                         trailingContent = {
                             Row {
                                 TextButton(onClick = { inspectGit(root.path) }) { Text("Inspect") }
@@ -109,7 +112,11 @@ fun DeveloperScreen(navController: NavController) {
                 }
             }
             item {
-                Text("Git metadata (read-only)", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Git metadata (read-only)", style = MaterialTheme.typography.titleMedium)
+                }
                 Text(gitInfo, style = MaterialTheme.typography.bodyMedium)
             }
             item { Text("Code and config files in the inspected project (first 100 matches)", style = MaterialTheme.typography.titleMedium) }
@@ -119,7 +126,7 @@ fun DeveloperScreen(navController: NavController) {
                 items(codeFiles, key = { it.key }) { item ->
                     FileRow(item, ViewMode.LIST, false, false, true, onClick = {
                         val parent = item.file?.parentFile
-                        if (parent != null) navController.navigate(Dest.Explorer.create(parent.absolutePath))
+                        if (parent != null) navController.navigateSafe(Dest.Explorer.create(parent.absolutePath))
                     }, onLongClick = {})
                 }
             }
@@ -165,7 +172,11 @@ fun DiagnosticsScreen(navController: NavController) {
     ) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
-                Text("Nobi ecosystem — verified checks only", style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Nobi ecosystem — verified checks only", style = MaterialTheme.typography.titleMedium)
+                }
                 Text("This screen reports what can actually be verified on this device. It does not claim that opening a file in Nobi Code or a folder in Nobi Terminal works until that has been tested on a real device.", style = MaterialTheme.typography.bodyMedium)
             }
             item {

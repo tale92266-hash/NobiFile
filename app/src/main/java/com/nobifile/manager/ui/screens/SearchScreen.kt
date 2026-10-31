@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ import com.nobifile.manager.storage.StorageRepository
 import com.nobifile.manager.ui.components.EmptyState
 import com.nobifile.manager.ui.components.FileRow
 import com.nobifile.manager.ui.navigation.Dest
+import com.nobifile.manager.ui.navigation.navigateSafe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -34,7 +36,7 @@ fun SearchScreen(navController: NavController) {
     var results by remember { mutableStateOf<List<FileItem>>(emptyList()) }
     var searching by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    var history by remember { mutableStateOf(app.database.searchHistory()) }
+    var history by remember { mutableStateOf(runCatching { app.database.searchHistory() }.getOrDefault(emptyList())) }
     val scope = rememberCoroutineScope()
     var job by remember { mutableStateOf<Job?>(null) }
 
@@ -87,7 +89,11 @@ fun SearchScreen(navController: NavController) {
             if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error)
             if (history.isNotEmpty() && query.isEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Text("Recent searches", style = MaterialTheme.typography.titleSmall)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Recent searches", style = MaterialTheme.typography.titleSmall)
+                }
                 history.forEach { h ->
                     TextButton(onClick = { query = h.query; doSearch() }) { Text(h.query) }
                 }
@@ -103,12 +109,12 @@ fun SearchScreen(navController: NavController) {
                     FileRow(
                         item, ViewMode.LIST, false, false, true,
                         onClick = {
-                            if (item.isDirectory) navController.navigate(Dest.Explorer.create(item.displayPath))
+                            if (item.isDirectory) navController.navigateSafe(Dest.Explorer.create(item.displayPath))
                             else {
                                 app.database.recordRecent(item.name, item.displayPath)
                                 if (item.file != null) {
                                     val parent = item.file.parentFile
-                                    if (parent != null) navController.navigate(Dest.Explorer.create(parent.absolutePath))
+                                    if (parent != null) navController.navigateSafe(Dest.Explorer.create(parent.absolutePath))
                                 }
                             }
                         },

@@ -8,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Environment
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -44,6 +45,8 @@ import com.nobifile.manager.ui.components.ErrorState
 import com.nobifile.manager.ui.components.FileRow
 import com.nobifile.manager.ui.components.formatDate
 import com.nobifile.manager.ui.navigation.Dest
+import com.nobifile.manager.ui.navigation.folderDisplayName
+import com.nobifile.manager.ui.navigation.navigateSafe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -120,7 +123,7 @@ fun ExplorerScreen(
         scope.launch(Dispatchers.IO) {
             try {
                 app.database.saveTabs(tabs.mapIndexed { i, p ->
-                    com.nobifile.manager.data.ExplorerTab(0, File(p).name.ifBlank { "Storage" }, p, i)
+                    com.nobifile.manager.data.ExplorerTab(0, folderDisplayName(p), p, i)
                 })
             } catch (e: Exception) { }
         }
@@ -133,7 +136,7 @@ fun ExplorerScreen(
                     Tab(
                         selected = index == currentTab,
                         onClick = { currentTab = index },
-                        text = { Text(File(path).name.ifBlank { "Storage" }, maxLines = 1) }
+                        text = { Text(folderDisplayName(path), maxLines = 1) }
                     )
                 }
             }
@@ -148,7 +151,9 @@ fun ExplorerScreen(
                         kind = kind,
                         uri = uri,
                         paneKey = "pane-a",
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        dualPane = true,
+                        onToggleDualPane = { dualPane = false }
                     )
                     Divider(modifier = Modifier.fillMaxHeight().width(1.dp))
                     ExplorerPane(
@@ -157,7 +162,9 @@ fun ExplorerScreen(
                         kind = "file",
                         uri = "",
                         paneKey = "pane-b",
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        dualPane = true,
+                        onToggleDualPane = { dualPane = false }
                     )
                 }
             } else {
@@ -238,15 +245,31 @@ fun ExplorerPane(
 
     LaunchedEffect(initialPath, kind) { vm.loadPath(initialPath, pushHistory = false) }
 
+    fun handleBack(): Boolean {
+        if (selectionMode) { vm.clearSelection(); return true }
+        return vm.navigateUp()
+    }
+
+    // System Back: walk up the folder hierarchy first. Only when already at
+    // Internal Storage root does Back leave the Explorer (to Home), never
+    // straight out of the app. In dual-pane mode only the left pane handles Back.
+    BackHandler(enabled = !dualPane || paneKey == "pane-a") {
+        if (!handleBack()) {
+            navController.navigateSafe(Dest.Home.route)
+        }
+    }
+
     fun handleOpen(item: FileItem) {
         if (selectionMode) { vm.toggleSelect(item); return }
         if (item.isDirectory) { vm.openItem(item); return }
-        app.database.recordRecent(item.name, item.displayPath)
+        scope.launch(Dispatchers.IO) {
+            try { app.database.recordRecent(item.name, item.displayPath) } catch (e: Exception) { }
+        }
         val ext = item.extension
         when {
-            ArchiveOps.isArchive(item.name) -> navController.navigate(Dest.Archive.create(item.displayPath))
+            ArchiveOps.isArchive(item.name) -> navController.navigateSafe(Dest.Archive.create(item.displayPath))
             ext in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp") || ext == "mp4" || ext == "mkv" || ext == "webm" || ext == "mov" || ext in setOf("mp3", "wav", "flac", "ogg", "m4a") || ext == "pdf" || isTextExtension(ext) ->
-                navController.navigate(Dest.Viewer.create(item.displayPath, ext))
+                navController.navigateSafe(Dest.Viewer.create(item.displayPath, ext))
             else -> openWithChooser(context, item)
         }
     }
@@ -306,14 +329,19 @@ fun ExplorerPane(
                             DropdownMenuItem(text = { Text("Compare (select exactly 2 files)") }, onClick = {
                                 showMoreMenu = false
                                 val sel = vm.selectedItems().filter { !it.isDirectory }
-                                if (sel.size == 2) navController.navigate(Dest.Compare.create(sel[0].displayPath, sel[1].displayPath))
+                                if (sel.size == 2) navController.navigateSafe(Dest.Compare.create(sel[0].displayPath, sel[1].displayPath))
                                 else scope.launch { snackbarHostState.showSnackbar("Select exactly 2 files to compare.") }
                             })
                             DropdownMenuItem(text = { Text("Add to favorites") }, onClick = {
                                 showMoreMenu = false
-                                vm.selectedItems().forEach { app.database.addBookmark(it.name, it.displayPath, if (it.isDirectory) "folder" else "file") }
+                                val favs = vm.selectedItems()
                                 vm.clearSelection()
-                                scope.launch { snackbarHostState.showSnackbar("Added to favorites.") }
+                                scope.launch(Dispatchers.IO) {
+                                    try {
+                                        favs.forEach { app.database.addBookmark(it.name, it.displayPath, if (it.isDirectory) "folder" else "file") }
+                                    } catch (e: Exception) { }
+                                    withContext(Dispatchers.Main) { scope.launch { snackbarHostState.showSnackbar("Added to favorites.") } }
+                                }
                             })
                         }
                     }
@@ -322,17 +350,17 @@ fun ExplorerPane(
                 TopAppBar(
                     title = {
                         Column {
-                            Text(File(currentPath).name.ifBlank { "Storage" }, maxLines = 1)
+                            Text(folderDisplayName(currentPath), maxLines = 1)
                             Text(currentPath, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         }
                     },
                     navigationIcon = {
                         IconButton(onClick = {
-                            if (!vm.navigateUp()) navController.popBackStack()
+                            if (!handleBack()) navController.navigateSafe(Dest.Home.route)
                         }) { Icon(Icons.Rounded.ArrowBack, contentDescription = "Back") }
                     },
                     actions = {
-                        IconButton(onClick = { navController.navigate(Dest.Search.route) }) { Icon(Icons.Rounded.Search, contentDescription = "Search") }
+                        IconButton(onClick = { navController.navigateSafe(Dest.Search.route) }) { Icon(Icons.Rounded.Search, contentDescription = "Search") }
                         IconButton(onClick = { showSortMenu = true }) { Icon(Icons.Rounded.Sort, contentDescription = "Sort") }
                         DropdownMenu(expanded = showSortMenu, onDismissRequest = { showSortMenu = false }) {
                             DropdownMenuItem(text = { Text("Name A-Z") }, onClick = { vm.setSort(SortOrder.NAME_ASC); showSortMenu = false })
@@ -358,7 +386,7 @@ fun ExplorerPane(
                             if (onNewTab != null) DropdownMenuItem(text = { Text("Open in new tab") }, onClick = { onNewTab(currentPath); showMoreMenu = false })
                             if (onCloseTab != null) DropdownMenuItem(text = { Text("Close tab") }, onClick = { onCloseTab(); showMoreMenu = false })
                             DropdownMenuItem(text = { Text("Refresh") }, onClick = { vm.load(); showMoreMenu = false })
-                            DropdownMenuItem(text = { Text("Storage details") }, onClick = { navController.navigate(Dest.Storage.route); showMoreMenu = false })
+                            DropdownMenuItem(text = { Text("Storage details") }, onClick = { navController.navigateSafe(Dest.Storage.route); showMoreMenu = false })
                         }
                     }
                 )
@@ -646,8 +674,10 @@ fun ExplorerPane(
                 actions.add("Details" to { sheetItem = null; detailsItem = item })
                 actions.add("Add to favorites" to {
                     sheetItem = null
-                    app.database.addBookmark(item.name, item.displayPath, if (item.isDirectory) "folder" else "file")
-                    scope.launch { snackbarHostState.showSnackbar("Added to favorites.") }
+                    scope.launch(Dispatchers.IO) {
+                        try { app.database.addBookmark(item.name, item.displayPath, if (item.isDirectory) "folder" else "file") } catch (e: Exception) { }
+                        withContext(Dispatchers.Main) { scope.launch { snackbarHostState.showSnackbar("Added to favorites.") } }
+                    }
                 })
                 actions.add("Copy path" to { sheetItem = null; copyTextToClipboard(context, "Path", item.displayPath) })
                 if (ArchiveOps.isArchive(item.name)) {
@@ -664,7 +694,7 @@ fun ExplorerPane(
                             }
                         }
                     })
-                    actions.add("View archive" to { sheetItem = null; navController.navigate(Dest.Archive.create(item.displayPath)) })
+                    actions.add("View archive" to { sheetItem = null; navController.navigateSafe(Dest.Archive.create(item.displayPath)) })
                 }
                 if (!item.isDirectory) {
                     actions.add("Compress to ZIP" to {
