@@ -13,12 +13,37 @@
   GitHub Actions build: PENDING — repo creation and push are separate steps after
   local source completion, per Sam's order (local first, then repo + push).
 
-## GitHub Actions (to be filled after the first run)
+## GitHub Actions — VERIFIED 2026-10-31 (run 41158539455, success)
 
-- Repo: https://github.com/tale92266-hash/NobiFile (pending)
-- Run URL: (pending)
-- APK: package, size, SHA-256, MD5, cert fingerprint: (pending — verify with
-  keytool -printcert -jarfile and apktool/aapt2 dump before delivery)
-- Signing: fixed key in GitHub Secrets only; debug signingConfig reads
-  NOBIFILE_* env vars with fallback to default debug signing for local builds.
-  No keystore/password/token is committed to the repo or printed in any report.
+- Repo: https://github.com/tale92266-hash/NobiFile (HEAD 643a0062, 87 files, workflow present, no keystore files)
+- Run URL: https://github.com/tale92266-hash/NobiFile/actions/runs/41158539455 — all 8 steps success (checkout, JDK 17, gradlew, keystore restore, build, cert print, upload).
+- Build fixes applied on the way (standing fix rule, no waiting): (1) compose compiler
+  plugin version — root build.gradle.kts now declares
+  `id("org.jetbrains.kotlin.plugin.compose") version "2.2.21" apply false`
+  (run 41157896391 failure); (2) `com.google.android.material:material:1.12.0`
+  dependency for the `Theme.Material3.DayNight.NoActionBar` XML parent
+  (run 41158061236 failure); (3) signing key regenerated with ONE password for
+  store and key — keytool IGNORES a different -keypass for PKCS12 keystores
+  ("Different store and key passwords not supported"), so the first key's
+  separate key password made AGP fail with "Given final block not properly
+  padded" (run 41158213275). The first key (fingerprint 73:67:5B:...) was
+  replaced and must never be used; the fixed key below is the only key.
+- APK (downloaded from the run artifact `NobiFile-debug-apk`, verified locally):
+  package `com.nobifile.manager`, versionCode 1, versionName 1.0.0, label V1,
+  MainActivity `com.nobifile.manager.MainActivity`, compileSdk 35, debuggable.
+  Size 63,166,866 bytes (full debug APK, 929 entries, 11 dex files — NOT an R8 build).
+  SHA-256 `ddc7e456e1f8177713849d8737175fc11679e04b6301721e599fcd0d2d3a613a`,
+  MD5 `dc838ec9718a557e9c0c038ff9a3b277`.
+- Signing: fixed key in GitHub Secrets only (alias `nobifile`, PKCS12, CN=NobiFile).
+  Cert SHA-256 `59:D4:AD:DE:63:73:9A:F6:92:4D:D6:FA:B7:62:45:4B:4E:2E:01:97:DE:2A:D7:DB:19:0F:58:36:F0:3B:B2:C6`
+  (verified from the APK signing block certificate, DER-parsed with openssl;
+  keytool -printcert does not read v2-only signatures). No keystore/password/
+  token is committed to the repo or printed in any report.
+- On-device verification: PENDING — Sam's phone test is the verdict (install,
+  first open, storage permission, file list, viewers, archives).
+- Honesty note: compile is verified; the done-vs-pending list in FEATURE_STATUS.md
+  stands — Smart Collections rules UI, custom associations, Secure Folder, RAR/7Z,
+  SAF subfolder navigation beyond the picked tree, full Git status, video/PDF extras,
+  background audio, and the Nobi Code / Nobi Terminal integrations are NOT done
+  and must not be claimed. Diagnostics only reports installed/not-installed and
+  intent resolution; files open via the system Open With chooser.
