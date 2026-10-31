@@ -1,6 +1,6 @@
 # NobiFile — Feature Status (truthful)
 
-Verified: static checks (XML parse, brace/import/reference checks, no-secrets grep) + GitHub Actions compile VERIFIED 2026-10-31 (run 41158539455, success; see BUILD_REPORT.md). On-device: Sam installed V1 on 2026-10-31 ~08:19 IST and reported 5 bugs (see V2 below). V2 fixes them; V2 on-device verification pending — Sam's phone is the verdict.
+Verified: static checks (XML parse, brace/import/reference checks, no-secrets grep) + GitHub Actions compile VERIFIED 2026-10-31 (V1 run 41158539455; V2 run 41163392822, success, commit f2cf30fb; see BUILD_REPORT.md). On-device: Sam installed V1 on 2026-10-31 ~08:19 IST and reported 5 bugs (see V2 below). V2 fixes them; V2 on-device verification pending — Sam's phone is the verdict.
 
 ## V2 fixes (Sam's on-device report, 2026-10-31 ~08:27 IST)
 

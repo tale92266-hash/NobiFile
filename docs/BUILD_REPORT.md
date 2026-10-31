@@ -47,3 +47,9 @@
   background audio, and the Nobi Code / Nobi Terminal integrations are NOT done
   and must not be claimed. Diagnostics only reports installed/not-installed and
   intent resolution; files open via the system Open With chooser.
+
+## GitHub Actions — V2 VERIFIED 2026-10-31 (run 41163392822, success)
+
+- Commit f2cf30fb (after V2 source commit e0e47e0f and two icon-import fix commits b643c05f, f2cf30fb). VersionCode 2, versionName 1.0.1, label V2, same fixed signing key (cert SHA-256 59:D4:AD:DE:...:B2:C6, CN=NobiFile).
+- APK: 63,281,554 B, 929 entries, 11 dex, SHA-256 3a0f7b4e490704b33eff7ff9ac649af2eb010c5571ce3256e5b22f0366f5de2d, MD5 19ff65cc8a25708a6edd86d8d52902e1. Package/version/compileSdk verified from the binary manifest; cert verified by DER scan of the v2 signing block.
+- Build failures on the way (standing fix rule, no waiting): (1) run 41162738698 — `Icons.Rounded.FolderOpen` unresolved in this icons set; (2) run 41163035161 — fully-qualified `Icons.Rounded.Folder` path does not resolve; icon properties live in the `androidx.compose.material.icons.rounded` package and need a star/explicit import (see AGENTS.md lesson). Fix: explicit `import ...rounded.Folder` + short form in FileRow.kt. On-device verification pending — Sam's phone is the verdict.
