@@ -1,0 +1,23 @@
+# Android
+build/
+.gradle/
+.kotlin/
+local.properties
+*.tmp
+*.bak
+*.orig
+*.swp
+captures/
+.externalNativeBuild/
+.cxx/
+# Keystore and secrets - never commit
+*.jks
+*.keystore
+*.p12
+keystore/
+# IDE
+.idea/
+*.iml
+.DS_Store
+# Keep the wrapper jar tracked (ACS/GitHub need it)
+!gradle/wrapper/gradle-wrapper.jar
