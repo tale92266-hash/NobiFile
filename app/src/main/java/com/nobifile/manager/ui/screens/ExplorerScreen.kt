@@ -116,7 +116,7 @@ fun ExplorerScreen(
     val app = context.applicationContext as NobiFileApplication
     // Tabs persist in the database: restoring them (plus the requested
     // folder as its own tab) keeps deep-folder state across viewer trips.
-    val savedTabs = runCatching { app.database.tabs().sortedBy { it.index }.map { it.path } }.getOrDefault(emptyList())
+    val savedTabs: List<String> = runCatching { app.database.tabs().sortedBy { it.position }.map { it.path } }.getOrDefault(emptyList())
     var tabs by remember {
         mutableStateOf(
             when {
