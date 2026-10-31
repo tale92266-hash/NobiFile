@@ -1,9 +1,12 @@
 # NobiFile
 
+<img src="https://raw.githubusercontent.com/tale92266-hash/NobiFile/main/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png" width="128" alt="NobiFile icon">
+
 Professional developer file manager for Android. Native Kotlin + Jetpack Compose + Material 3.
 
 - Package: `com.nobifile.manager`
-- Version: 1.0.0 (versionCode 1) • Build label: V1
+- Version: 1.0.2 (versionCode 3) • Build label: V3
+- Launcher icon: Sam's supplied folder artwork (transparent foreground, `#0B1220` background from code, 56% adaptive canvas).
 - Stack: Gradle 8.11.1, AGP 8.9.2, Kotlin 2.2.21, compileSdk 35, minSdk 30, targetSdk 35
 - App UI text is English throughout.
 

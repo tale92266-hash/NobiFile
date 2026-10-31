@@ -18,7 +18,7 @@ Verified: static checks (XML parse, brace/import/reference checks, no-secrets gr
 - Viewers: image, video (play/pause), audio (in-app), PDF (render pages), text/code preview (read-only, line numbers, find, wrap, font size).
 - Archives: ZIP/TAR/TAR.GZ/GZIP list/extract/create (stdlib only).
 - Batch rename with preview, text file comparison, Developer workspace (project roots + read-only Git branch/log), Diagnostics (PackageManager checks only), Settings (theme/AMOLED/accent, explorer, operations, storage, privacy, About with V1 label).
-- Launcher icon: generated folder mark, transparent foreground, #0B1220 background from code, per-density + v26 layers. Foreground xxxhdpi MD5: 8a594c4fadbf (first 12 chars; full hash in build verification).
+- Launcher icon: Sam's supplied folder artwork (V3), extracted from his icon sheet with the checkerboard removed to a transparent PNG, unchanged artwork, `#0B1220` background from code, foreground at 56% of the adaptive canvas, per-density + v26 layers, monochrome silhouette, legacy + round icons. Foreground xxxhdpi MD5: 4ca123c8416aa62f8edc15d37967187a. The same artwork is the drawer header and onboarding logo (`drawable-nodpi/nobifile_logo.png`).
 
 ## Pending / omitted (UI omitted, not faked)
 

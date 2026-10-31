@@ -6,6 +6,7 @@ import android.os.Environment
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
@@ -22,6 +24,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.nobifile.manager.BuildInfo
+import com.nobifile.manager.R
 import com.nobifile.manager.NobiFileApplication
 import com.nobifile.manager.data.PrefsStore
 import com.nobifile.manager.storage.StorageRepository
@@ -71,7 +74,11 @@ fun AppShell() {
             ModalDrawerSheet {
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                    Image(
+                        painter = painterResource(R.drawable.nobifile_logo),
+                        contentDescription = "NobiFile",
+                        modifier = Modifier.size(40.dp)
+                    )
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text("NobiFile", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
@@ -237,11 +244,10 @@ fun OnboardingScreen(onDone: () -> Unit) {
             Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 32.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            Icon(
-                Icons.Rounded.Folder,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(56.dp)
+            Image(
+                painter = painterResource(R.drawable.nobifile_logo),
+                contentDescription = "NobiFile",
+                modifier = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(20.dp))
             Text(
