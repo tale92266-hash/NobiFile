@@ -59,3 +59,9 @@
 - Commit c9ebbd75. VersionCode 3, versionName 1.0.2, label V3, same fixed signing key (cert SHA-256 59:D4:AD:DE:...:B2:C6, CN=NobiFile).
 - APK: 63,692,671 B, 930 entries, 11 dex, SHA-256 1ef01e1766dc04056d7e8504fc401d3315b4177f629d0c6e4fd6082a9ec04cae, MD5 d0d23ebb89d92e412fb0c8200249e2be. Launcher foreground (xxxhdpi) MD5 4ca123c8416aa62f8edc15d37967187a matches Sam's supplied artwork; in-app logo drawable present in resources. Package/version/compileSdk verified from the binary manifest; cert verified by DER scan of the v2 signing block.
 - Icon work: Sam supplied a composite sheet (checkerboard panel + usage examples). The big folder artwork was cropped from the left panel, the baked checkerboard removed by background-class flood fill (enclosed gloss kept), disconnected label-chip sliver dropped by keeping the largest foreground component, artwork unchanged. On-device verification pending — Sam's phone is the verdict.
+
+## GitHub Actions — V4 VERIFIED 2026-10-31 (run 41166738998, success)
+
+- Commit 43729405 (first V4 attempt a7d77d9f failed at compileDebugKotlin: ExplorerTab field is `position`, not `index`; fixed and rebuilt). VersionCode 4, versionName 1.0.3, label V4, same fixed signing key (cert SHA-256 59:D4:AD:DE:...:B2:C6, CN=NobiFile).
+- APK: 63,670,159 B, 930 entries, 11 dex, SHA-256 04b1d7047aa45e8719020b7b1cc18ae1e3d7aabe4cc06409e2eb525b23540d73, MD5 a4261b903aad7e67990dbc2126c7a72f. Launcher foreground (xxxhdpi) MD5 b8a7a1867d15a7091c551ccf00f60e14 (48% artwork); in-app logo present; package/version/compileSdk verified from the binary manifest; cert verified by DER scan of the v2 signing block.
+- Fixes: sidebar double-tap blank guard, viewer Back one-step + Explorer state restore (loadInitial + persisted tabs), image/video thumbnails (MediaMetadataRetriever video frames), icon at 48%. On-device verification pending — Sam's phone is the verdict.
